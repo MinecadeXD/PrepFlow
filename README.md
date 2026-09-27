@@ -23,7 +23,7 @@
 
 Try PrepFlow directly in your browser:
 
-👉 **[Open PrepFlow Live Demo](https://minecadexd.github.io/prepflow/)**
+👉 **[Open PrepFlow Live Demo](https://minecadexd.github.io/PrepFlow/)**
 
 No installation required.
 
