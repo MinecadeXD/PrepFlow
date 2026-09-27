@@ -19,6 +19,14 @@
 
 ---
 
+## 🌐 Live Demo
+
+Try PrepFlow directly in your browser:
+
+👉 **[Open PrepFlow Live Demo](https://minecadexd.github.io/prepflow/)**
+
+No installation required.
+
 ## Features
 
 ### 📊 Dashboard & Progress
