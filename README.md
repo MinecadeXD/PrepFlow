@@ -1,5 +1,7 @@
 <div align="center">
 
+<img width="1280" height="640" alt="PrepFlow Banner" src="https://github.com/user-attachments/assets/588ffe34-b495-4999-b8e7-5512206f776d" />
+
 # 📚 PrepFlow
 
 **Study & MHT-CET Preparation Tracker**
