@@ -27,13 +27,6 @@ jobs:
       - name: Install Cordova Locally
         run: npm install cordova
 
-      - name: Minify PrepFlow HTML/CSS/JS
-        run: |
-          npm install --no-save html-minifier-terser
-          npx html-minifier-terser index.html --collapse-whitespace --remove-comments --minify-css true --minify-js true --output index.min.html
-          test -s index.min.html
-          test "$(wc -c < index.min.html)" -lt "$(wc -c < index.html)"
-
       - name: Build PrepFlow APK via Cordova
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -43,7 +36,7 @@ jobs:
         run: |
           npx cordova create build_app com.minecade.prepflow PrepFlow
 
-          cp index.min.html build_app/www/index.html
+          cp index.html build_app/www/index.html
           cp logo.png build_app/www/logo.png
           cp logo.png build_app/logo.png
 
@@ -74,6 +67,43 @@ jobs:
           test -f platforms/android/app/src/main/assets/www/cordova_plugins.js
           grep -q "PrepFlowBackup" platforms/android/app/src/main/assets/www/cordova_plugins.js
           grep -q "com.minecade.prepflow.backup.PrepFlowBackup" platforms/android/app/src/main/res/xml/config.xml
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          gradle = Path("platforms/android/app/build.gradle")
+          text = gradle.read_text()
+
+          if "minifyEnabled false" not in text:
+              raise SystemExit("Expected Cordova release minify setting was not found")
+
+          text = text.replace("minifyEnabled false", "minifyEnabled true", 1)
+
+          if "shrinkResources" not in text:
+              text = text.replace(
+                  "minifyEnabled true",
+                  "minifyEnabled true\n        shrinkResources true",
+                  1,
+              )
+
+          gradle.write_text(text)
+
+          rules = Path("platforms/android/app/proguard-rules.pro")
+          existing = rules.read_text() if rules.exists() else ""
+          keep_rule = "-keep class com.minecade.prepflow.backup.** { *; }"
+          if keep_rule not in existing:
+              rules.write_text(existing.rstrip() + "\n\n# Cordova loads the PrepFlow backup plugin by class name.\n" + keep_rule + "\n")
+
+          final_gradle = gradle.read_text()
+          if "minifyEnabled true" not in final_gradle:
+              raise SystemExit("R8 minification was not enabled")
+          if "shrinkResources true" not in final_gradle:
+              raise SystemExit("Resource shrinking was not enabled")
+          PY
+
+          grep -q "minifyEnabled true" platforms/android/app/build.gradle
+          grep -q "shrinkResources true" platforms/android/app/build.gradle
+          grep -q "com.minecade.prepflow.backup.**" platforms/android/app/proguard-rules.pro
 
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > prepflow-release.keystore
           chmod 600 prepflow-release.keystore
