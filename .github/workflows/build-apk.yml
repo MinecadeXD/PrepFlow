@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'index.html'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -80,8 +81,10 @@ jobs:
           }
           GRADLE
 
-          printf '%s
-' '# Cordova loads the PrepFlow backup plugin by class name.' '-keep class com.minecade.prepflow.backup.** { *; }' >> platforms/android/app/proguard-rules.pro
+          cat << 'PROGUARD' >> platforms/android/app/proguard-rules.pro
+          # Cordova loads the PrepFlow backup plugin by class name.
+          -keep class com.minecade.prepflow.backup.** { *; }
+          PROGUARD
 
           test -f platforms/android/app/build-extras.gradle
           grep -q "minifyEnabled true" platforms/android/app/build-extras.gradle
