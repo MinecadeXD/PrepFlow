@@ -43,6 +43,7 @@ No installation required.
 - Record **tests completed / total tests**.
 - Mark **Textbook, Practice, Formula Sheet, and CET MCQ** work as completed.
 - Set chapter priority levels: **High, Medium, or Low**.
+- Set chapter study mode: **Lectures, One shot, or Both**
 - Track **revision count** and the date of the latest revision.
 - Add chapter-specific **notes**.
 - Automatically record the **last studied date**.
