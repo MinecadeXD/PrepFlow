@@ -299,7 +299,7 @@
               </div>
               <span class="text-sm font-semibold text-slate-300">App Version</span>
             </div>
-            <span class="text-sm font-bold text-brand-400">1.17.2</span>
+            <span class="text-sm font-bold text-brand-400">1.17.3</span>
           </div>
           <div class="p-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -364,15 +364,26 @@
           <div class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center space-x-1.5" id="chapter-subject-tag">
             <!-- Subject name -->
           </div>
-          <!-- Priority Tag Input -->
-          <div class="flex items-center space-x-1.5">
-            <span class="text-[11px] text-slate-400 font-semibold">Priority:</span>
-            <select id="select-priority" onchange="app.updateCurrentChapter()" class="bg-darksubCard border border-darkborder text-xs text-slate-200 rounded-lg px-2 py-1 font-semibold focus:outline-none">
-              <option value="none">None</option>
-              <option value="high">🔥 High</option>
-              <option value="medium">⚡ Medium</option>
-              <option value="low">🌱 Low</option>
-            </select>
+          <!-- Priority and Study Mode Inputs -->
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold">Priority:</span>
+              <select id="select-priority" onchange="app.updateCurrentChapter()" class="bg-darksubCard border border-darkborder text-xs text-slate-200 rounded-lg px-2 py-1 font-semibold focus:outline-none">
+                <option value="none">None</option>
+                <option value="high">🔥 High</option>
+                <option value="medium">⚡ Medium</option>
+                <option value="low">🌱 Low</option>
+              </select>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold">Study Mode:</span>
+              <select id="select-study-mode" onchange="app.updateCurrentChapter()" class="bg-darksubCard border border-darkborder text-xs text-slate-200 rounded-lg px-2 py-1 font-semibold focus:outline-none">
+                <option value="none">None</option>
+                <option value="one-shot">🎯 One Shot</option>
+                <option value="lectures">📚 Lectures</option>
+                <option value="both">🔄 Both</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -618,11 +629,22 @@
         return data;
       }
 
+      normalizeData(data) {
+        Object.keys(data).forEach(subjectId => {
+          if (!Array.isArray(data[subjectId])) return;
+          data[subjectId] = data[subjectId].map(ch => ({
+            ...ch,
+            studyMode: ['one-shot', 'lectures', 'both'].includes(ch.studyMode) ? ch.studyMode : 'none'
+          }));
+        });
+        return data;
+      }
+
       loadData() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw) {
-            return JSON.parse(raw);
+            return this.normalizeData(JSON.parse(raw));
           }
         } catch (e) {
           console.error('Failed to load local storage', e);
@@ -645,16 +667,8 @@
           return;
         }
 
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          alert('There is no PrepFlow data to back up yet.');
-          return;
-        }
-
-        let parsed;
-        try {
-          parsed = JSON.parse(raw);
-        } catch (e) {
+        const parsed = this.data;
+        if (!parsed || typeof parsed !== 'object') {
           alert('PrepFlow data could not be read for backup.');
           return;
         }
@@ -724,7 +738,7 @@
           }
 
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.data));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.normalizeData(backup.data)));
             location.reload();
           } catch (e) {
             alert('The backup could not be restored.');
@@ -988,11 +1002,17 @@
           else if (ch.priority === 'medium') priorityBadge = '⚡';
           else if (ch.priority === 'low') priorityBadge = '🌱';
 
+          let studyModeBadge = '';
+          if (ch.studyMode === 'one-shot') studyModeBadge = '🎯 One Shot';
+          else if (ch.studyMode === 'lectures') studyModeBadge = '📚 Lectures';
+          else if (ch.studyMode === 'both') studyModeBadge = '🔄 Both';
+
           item.innerHTML = `
             <div class="flex items-center space-x-3.5 pr-4 truncate">
               <span class="text-xs font-mono font-bold text-slate-500 group-hover:text-slate-300">${indexFormatted}</span>
               <span class="text-sm font-semibold text-slate-200 truncate">${ch.name}</span>
               ${priorityBadge ? `<span class="text-xs">${priorityBadge}</span>` : ''}
+              ${studyModeBadge ? `<span class="text-[10px] font-semibold text-brand-300 bg-brand-500/10 border border-brand-500/20 px-1.5 py-0.5 rounded-md whitespace-nowrap">${studyModeBadge}</span>` : ''}
             </div>
             <div class="flex items-center space-x-3 flex-shrink-0">
               <span class="text-xs font-mono font-bold text-slate-300">${pct}%</span>
@@ -1015,6 +1035,7 @@
         `;
         document.getElementById('chapter-name').textContent = ch.name;
         document.getElementById('select-priority').value = ch.priority || 'none';
+        document.getElementById('select-study-mode').value = ['one-shot', 'lectures', 'both'].includes(ch.studyMode) ? ch.studyMode : 'none';
 
         const pct = this.calculateChapterProgress(ch);
         const status = this.getChapterStatus(ch);
@@ -1094,6 +1115,7 @@
         if (!ch) return;
 
         ch.priority = document.getElementById('select-priority').value;
+        ch.studyMode = document.getElementById('select-study-mode').value;
         ch.lecturesCompleted = parseInt(document.getElementById('input-lectures-completed').value, 10) || 0;
         ch.lecturesTotal = parseInt(document.getElementById('input-lectures-total').value, 10) || 0;
 
@@ -1174,6 +1196,7 @@
               id: 'ch_' + Date.now() + '_' + idx,
               name: lineName,
               priority: 'none',
+              studyMode: 'none',
               lecturesCompleted: 0,
               lecturesTotal: 0,
               textbook: false,
