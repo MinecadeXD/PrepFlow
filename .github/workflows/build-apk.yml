@@ -27,6 +27,13 @@ jobs:
       - name: Install Cordova Locally
         run: npm install cordova
 
+      - name: Minify PrepFlow HTML/CSS/JS
+        run: |
+          npm install --no-save html-minifier-terser
+          npx html-minifier-terser index.html --collapse-whitespace --remove-comments --minify-css true --minify-js true --output index.min.html
+          test -s index.min.html
+          test "$(wc -c < index.min.html)" -lt "$(wc -c < index.html)"
+
       - name: Build PrepFlow APK via Cordova
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -36,7 +43,7 @@ jobs:
         run: |
           npx cordova create build_app com.minecade.prepflow PrepFlow
 
-          cp index.html build_app/www/index.html
+          cp index.min.html build_app/www/index.html
           cp logo.png build_app/www/logo.png
           cp logo.png build_app/logo.png
 
